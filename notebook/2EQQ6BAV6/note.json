@@ -1,0 +1,851 @@
+{
+  "paragraphs": [
+    {
+      "text": "%md\n# Outlier Detection: An ETL Tutorial with Spark",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 15:18:33.140",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch1\u003eOutlier Detection: An ETL Tutorial with Spark\u003c/h1\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228401830_-190155529",
+      "id": "20190923-084641_374969579",
+      "dateCreated": "2019-09-23 08:46:41.830",
+      "dateStarted": "2019-09-30 15:18:33.140",
+      "dateFinished": "2019-09-30 15:18:33.161",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\nPart of the Industry 4.0 framework is to make sure that manufacturers have more visibility over what’s going on with their machines in the factory floors. This is why Industry 4.0 works tightly with Internet of Things. IoT allows large scale real-time data collection from sensors that are installed in production equipment possible. Nevertheless, having good Data Collection Agents alone isn’t sufficient. We need an automated way of extracting, analyzing and summarizing information from the large data stream, since it’s impossible for humans to do it manually. In big data terminology, this process is often referred to as ETL (Extract-Transform-Load).\n\nToday, we’ll discuss one family of algorithm that I have personally seen to be useful in the industry: outlier detection. The idea is to find any abnormal measurements from the data stream and highlight them to the domain experts e.g. process engineers. I will share an implementation of a basic anomaly detection algorithm in Spark. I could have done the same tutorial with python’s pandas-dataframe, but unfortunately once we deal with big dataset (whose size is way larger than memory space), the latter is no longer suitable.\n\nThis is a simple dummy dataset that I use. Suppose we have data stream from 2 sensors. How can we automatically capture the two anomalous dots that are present below?\n\n\u003ccenter\u003e\u003cimg src\u003d\"https://miro.medium.com/max/3900/1*NT1gMrAKkeGC-YUF-olSDw.png\" alt\u003d\"drawing\" width\u003d\"800\"/\u003e\u003c/center\u003e\n\n## Outlier Detection\nThe model that we use finds region of values whose probability of occurrence are low under the distribution that has been fitted to the observed data. We assume that our sensors are unimodal gaussian in nature. With that, we can calculate the two thresholds that are six sigma away from the distribution’s mean.\n\n\u003ccenter\u003e\u003cimg src\u003d\"https://miro.medium.com/max/3056/1*hLuquZaamGS1GdYjen7ieQ.png\" alt\u003d\"drawing\" width\u003d\"800\"/\u003e\u003c/center\u003e\n\nVisually, the thresholds are fitted in this manner. Any measurements above the Upper Limit (around 25) or below the Lower Limit (around 15) are deemed as outliers.\n\n\u003ccenter\u003e\u003cimg src\u003d\"https://miro.medium.com/max/2792/0*FSmI7mMO6Eukukpn.png\" alt\u003d\"drawing\" width\u003d\"800\"/\u003e\u003c/center\u003e\n\nNow to implement this in Spark, we first import all of the library dependencies:",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:36:44.512",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003cp\u003ePart of the Industry 4.0 framework is to make sure that manufacturers have more visibility over what’s going on with their machines in the factory floors. This is why Industry 4.0 works tightly with Internet of Things. IoT allows large scale real-time data collection from sensors that are installed in production equipment possible. Nevertheless, having good Data Collection Agents alone isn’t sufficient. We need an automated way of extracting, analyzing and summarizing information from the large data stream, since it’s impossible for humans to do it manually. In big data terminology, this process is often referred to as ETL (Extract-Transform-Load).\u003c/p\u003e\n\u003cp\u003eToday, we’ll discuss one family of algorithm that I have personally seen to be useful in the industry: outlier detection. The idea is to find any abnormal measurements from the data stream and highlight them to the domain experts e.g. process engineers. I will share an implementation of a basic anomaly detection algorithm in Spark. I could have done the same tutorial with python’s pandas-dataframe, but unfortunately once we deal with big dataset (whose size is way larger than memory space), the latter is no longer suitable.\u003c/p\u003e\n\u003cp\u003eThis is a simple dummy dataset that I use. Suppose we have data stream from 2 sensors. How can we automatically capture the two anomalous dots that are present below?\u003c/p\u003e\n\u003ccenter\u003e\u003cimg src\u003d\"https://miro.medium.com/max/3900/1*NT1gMrAKkeGC-YUF-olSDw.png\" alt\u003d\"drawing\" width\u003d\"800\"/\u003e\u003c/center\u003e\n\u003ch2\u003eOutlier Detection\u003c/h2\u003e\n\u003cp\u003eThe model that we use finds region of values whose probability of occurrence are low under the distribution that has been fitted to the observed data. We assume that our sensors are unimodal gaussian in nature. With that, we can calculate the two thresholds that are six sigma away from the distribution’s mean.\u003c/p\u003e\n\u003ccenter\u003e\u003cimg src\u003d\"https://miro.medium.com/max/3056/1*hLuquZaamGS1GdYjen7ieQ.png\" alt\u003d\"drawing\" width\u003d\"800\"/\u003e\u003c/center\u003e\n\u003cp\u003eVisually, the thresholds are fitted in this manner. Any measurements above the Upper Limit (around 25) or below the Lower Limit (around 15) are deemed as outliers.\u003c/p\u003e\n\u003ccenter\u003e\u003cimg src\u003d\"https://miro.medium.com/max/2792/0*FSmI7mMO6Eukukpn.png\" alt\u003d\"drawing\" width\u003d\"800\"/\u003e\u003c/center\u003e\n\u003cp\u003eNow to implement this in Spark, we first import all of the library dependencies:\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228447920_-411142999",
+      "id": "20190923-084727_1817214901",
+      "dateCreated": "2019-09-23 08:47:27.920",
+      "dateStarted": "2019-09-30 17:36:31.878",
+      "dateFinished": "2019-09-30 17:36:31.913",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "import org.apache.spark.sql._\nimport org.apache.spark.sql.types._\nimport org.apache.spark.sql.functions._",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:39:58.200",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228483738_1777893891",
+      "id": "20190923-084803_776992354",
+      "dateCreated": "2019-09-23 08:48:03.738",
+      "dateStarted": "2019-09-30 17:39:58.227",
+      "dateFinished": "2019-09-30 17:39:58.501",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md \n## Extract\nWe now assume that our data comes in a csv format. It has also been saved in a file called test.csv. We first specify the data schema explicitly. Note than in production, data could also be obtained from a database and message broker (e.g. MQTT, Kafka etc…).\n",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 15:19:40.480",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eExtract\u003c/h2\u003e\n\u003cp\u003eWe now assume that our data comes in a csv format. It has also been saved in a file called test.csv. We first specify the data schema explicitly. Note than in production, data could also be obtained from a database and message broker (e.g. MQTT, Kafka etc…).\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569258857779_28000062",
+      "id": "20190923-171417_1173976476",
+      "dateCreated": "2019-09-23 17:14:17.779",
+      "dateStarted": "2019-09-30 15:19:40.481",
+      "dateFinished": "2019-09-30 15:19:40.501",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "/** read csv */\nval customSchema \u003d StructType(Array(\n  StructField(\"sensorId\", StringType, true),\n  StructField(\"values\", DoubleType, true))\n)",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:40:06.860",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228534877_1203907235",
+      "id": "20190923-084854_1020928898",
+      "dateCreated": "2019-09-23 08:48:54.877",
+      "dateStarted": "2019-09-30 17:40:06.904",
+      "dateFinished": "2019-09-30 17:40:07.297",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\nThen, we read the csv file into a Spark DataFrame. Here we can see that there are only two columns: sensorId and values.",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 15:30:50.415",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003cp\u003eThen, we read the csv file into a Spark DataFrame. Here we can see that there are only two columns: sensorId and values.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569259394686_-1060061280",
+      "id": "20190923-172314_672284419",
+      "dateCreated": "2019-09-23 17:23:14.686",
+      "dateStarted": "2019-09-30 15:30:50.425",
+      "dateFinished": "2019-09-30 15:30:50.449",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// load dataset\nval df \u003d sqlContext.read\n  .format(\"csv\")\n  .option(\"header\", \"true\")\n  .schema(customSchema)\n  .load(\"/data/test.csv\")\n  \ndf.printSchema()",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:40:15.730",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228557500_255615914",
+      "id": "20190923-084917_641855537",
+      "dateCreated": "2019-09-23 08:49:17.500",
+      "dateStarted": "2019-09-30 17:40:15.762",
+      "dateFinished": "2019-09-30 17:40:16.076",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\nWe can register the dataset as a table for SQL-style queries:",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 15:31:11.494",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003cp\u003eWe can register the dataset as a table for SQL-style queries:\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569259486555_-1430723165",
+      "id": "20190923-172446_1904916164",
+      "dateCreated": "2019-09-23 17:24:46.555",
+      "dateStarted": "2019-09-30 15:31:11.483",
+      "dateFinished": "2019-09-30 15:31:11.530",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "df.createOrReplaceTempView(\"sensors\")",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:40:26.195",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala",
+        "editorHide": false,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "jobName": "paragraph_1569259520906_80111427",
+      "id": "20190923-172520_1032024338",
+      "dateCreated": "2019-09-23 17:25:20.906",
+      "dateStarted": "2019-09-30 17:40:26.234",
+      "dateFinished": "2019-09-30 17:40:26.504",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sql\n\nSELECT * FROM sensors",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:40:35.458",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 300.0,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "sensorId": "string",
+                      "values": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                },
+                "multiBarChart": {
+                  "rotate": {
+                    "degree": "-45"
+                  },
+                  "xLabelStatus": "default"
+                },
+                "lineChart": {
+                  "rotate": {
+                    "degree": "-45"
+                  },
+                  "xLabelStatus": "default"
+                },
+                "stackedAreaChart": {
+                  "rotate": {
+                    "degree": "-45"
+                  },
+                  "xLabelStatus": "default"
+                },
+                "scatterChart": {
+                  "yAxis": {
+                    "name": "values",
+                    "index": 1.0,
+                    "aggr": "sum"
+                  },
+                  "xAxis": {
+                    "name": "sensorId",
+                    "index": 0.0,
+                    "aggr": "sum"
+                  }
+                }
+              },
+              "keys": [],
+              "groups": [],
+              "values": [],
+              "commonSetting": {}
+            },
+            "helium": {}
+          }
+        },
+        "editorSetting": {
+          "language": "sql",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/sql",
+        "editorHide": false,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228952499_-1966876062",
+      "id": "20190923-085552_174016150",
+      "dateCreated": "2019-09-23 08:55:52.499",
+      "dateStarted": "2019-09-30 17:40:35.504",
+      "dateFinished": "2019-09-30 17:40:35.716",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## Transform\nWe would like to calculate the distribution profile for each sensorID, particularly the Upper and Lower Outlier Thresholds. To do that, we need to group the dataframe by sensorId, followed by aggregating each sensor data’s mean and standard deviation accordingly. We can then create 2 new columns, one for each outlier threshold.",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 15:35:28.865",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eTransform\u003c/h2\u003e\n\u003cp\u003eWe would like to calculate the distribution profile for each sensorID, particularly the Upper and Lower Outlier Thresholds. To do that, we need to group the dataframe by sensorId, followed by aggregating each sensor data’s mean and standard deviation accordingly. We can then create 2 new columns, one for each outlier threshold.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569259867430_327588980",
+      "id": "20190923-173107_2032836931",
+      "dateCreated": "2019-09-23 17:31:07.430",
+      "dateStarted": "2019-09-30 15:35:28.886",
+      "dateFinished": "2019-09-30 15:35:28.909",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// calculate statistics\nval statsDF \u003d df\n  .groupBy(\"sensorId\")\n  .agg(mean(\"values\").as(\"mean\"), stddev(\"values\").as(\"stddev\"))\n  .withColumn(\"UpperLimit\", col(\"mean\") + col(\"stddev\")*3)\n  .withColumn(\"LowerLimit\", col(\"mean\") - col(\"stddev\")*3)\n  \nstatsDF.printSchema()",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:40:48.742",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228596001_-420750552",
+      "id": "20190923-084956_1779352476",
+      "dateCreated": "2019-09-23 08:49:56.002",
+      "dateStarted": "2019-09-30 17:40:48.776",
+      "dateFinished": "2019-09-30 17:40:49.226",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n\u003cbr/\u003e\nWe would now like to find which sensor readings are anomalous in the original dataframe. Since the information live in two different dataframes, we need to join them using the sensorId column as a common index.",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 15:58:49.388",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003cbr/\u003e\n\u003cp\u003eWe would now like to find which sensor readings are anomalous in the original dataframe. Since the information live in two different dataframes, we need to join them using the sensorId column as a common index.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569260024727_-1041989439",
+      "id": "20190923-173344_980905921",
+      "dateCreated": "2019-09-23 17:33:44.727",
+      "dateStarted": "2019-09-30 15:58:49.388",
+      "dateFinished": "2019-09-30 15:58:49.410",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// join the two dataframe\nval joinDF \u003d df.join(statsDF, usingColumns \u003d Seq(\"sensorId\"))",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:40:58.152",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228613992_1570031338",
+      "id": "20190923-085013_737761097",
+      "dateCreated": "2019-09-23 08:50:13.993",
+      "dateStarted": "2019-09-30 17:40:58.189",
+      "dateFinished": "2019-09-30 17:40:58.622",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\nLastly, we can filter rows whose values lie beyond the range enclosed by the outlier thresholds. Voila! We managed to capture the two anomalous points.",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 16:02:13.692",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003cp\u003eLastly, we can filter rows whose values lie beyond the range enclosed by the outlier thresholds. Voila! We managed to capture the two anomalous points.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569260193628_-1325651368",
+      "id": "20190923-173633_2040701668",
+      "dateCreated": "2019-09-23 17:36:33.629",
+      "dateStarted": "2019-09-30 16:02:13.692",
+      "dateFinished": "2019-09-30 16:02:13.698",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// outlierDetection\nval detectOutlier \u003d (values: Column, UpperLimit: Column, LowerLimit: Column) \u003d\u003e {\n  // outliers are points lying below LowerLimit or above upperLimit\n  (values \u003c LowerLimit) or (values \u003e UpperLimit)\n}\n\nval outlierDF \u003d joinDF\n  .withColumn(\"isOutlier\", detectOutlier(col(\"values\"), col(\"UpperLimit\"), col(\"LowerLimit\")))\n  .filter(col(\"isOutlier\"))\n  \noutlierDF.createOrReplaceTempView(\"outliers\")",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:41:10.785",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228630576_1372666687",
+      "id": "20190923-085030_1663380301",
+      "dateCreated": "2019-09-23 08:50:30.576",
+      "dateStarted": "2019-09-30 17:41:10.818",
+      "dateFinished": "2019-09-30 17:41:11.165",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sql\n\nSELECT * FROM outliers",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:41:21.097",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 300.0,
+              "optionOpen": false,
+              "setting": {
+                "table": {
+                  "tableGridState": {},
+                  "tableColumnTypeState": {
+                    "names": {
+                      "sensorId": "string",
+                      "values": "string",
+                      "mean": "string",
+                      "stddev": "string",
+                      "UpperLimit": "string",
+                      "LowerLimit": "string",
+                      "isOutlier": "string"
+                    },
+                    "updated": false
+                  },
+                  "tableOptionSpecHash": "[{\"name\":\"useFilter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable filter for columns\"},{\"name\":\"showPagination\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable pagination for better navigation\"},{\"name\":\"showAggregationFooter\",\"valueType\":\"boolean\",\"defaultValue\":false,\"widget\":\"checkbox\",\"description\":\"Enable a footer for displaying aggregated values\"}]",
+                  "tableOptionValue": {
+                    "useFilter": false,
+                    "showPagination": false,
+                    "showAggregationFooter": false
+                  },
+                  "updated": false,
+                  "initialized": false
+                },
+                "stackedAreaChart": {
+                  "rotate": {
+                    "degree": "-45"
+                  },
+                  "xLabelStatus": "default"
+                }
+              },
+              "commonSetting": {},
+              "keys": [
+                {
+                  "name": "sensorId",
+                  "index": 0.0,
+                  "aggr": "sum"
+                }
+              ],
+              "groups": [],
+              "values": [
+                {
+                  "name": "values",
+                  "index": 1.0,
+                  "aggr": "sum"
+                }
+              ]
+            },
+            "helium": {}
+          }
+        },
+        "editorSetting": {
+          "language": "sql",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/sql",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TABLE",
+            "data": "sensorId\tvalues\tmean\tstddev\tUpperLimit\tLowerLimit\tisOutlier\n1\t20.0\t11.005\t2.834917026202803\t19.50975107860841\t2.5002489213915915\ttrue\n2\t40.0\t21.838333333333335\t5.720544845845834\t38.99996787087083\t4.676698795795833\ttrue\n"
+          },
+          {
+            "type": "TEXT",
+            "data": ""
+          }
+        ]
+      },
+      "runtimeInfos": {
+        "jobUrl": {
+          "propertyName": "jobUrl",
+          "label": "SPARK JOB",
+          "tooltip": "View in Spark web UI",
+          "group": "spark",
+          "values": [
+            "http://172.17.0.2:4040/jobs/job?id\u003d36",
+            "http://172.17.0.2:4040/jobs/job?id\u003d37"
+          ],
+          "interpreterSettingId": "spark"
+        }
+      },
+      "apps": [],
+      "jobName": "paragraph_1569228651918_1363471949",
+      "id": "20190923-085051_1177020",
+      "dateCreated": "2019-09-23 08:50:51.918",
+      "dateStarted": "2019-09-30 17:41:21.132",
+      "dateFinished": "2019-09-30 17:41:22.538",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n## Conclusion\nWe have seen how a typical ETL pipeline with Spark works, using anomaly detection as the main transformation process. Note that some of the procedures used here is not suitable for production. For example, CSV input and output are not encouraged. Normally we would use Hadoop Distributed File System (HDFS) instead. The latter could be wrapped under a database too e.g. HBase. Nonetheless, the main programming paradigm stays the same.",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 16:47:20.984",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch2\u003eConclusion\u003c/h2\u003e\n\u003cp\u003eWe have seen how a typical ETL pipeline with Spark works, using anomaly detection as the main transformation process. Note that some of the procedures used here is not suitable for production. For example, CSV input and output are not encouraged. Normally we would use Hadoop Distributed File System (HDFS) instead. The latter could be wrapped under a database too e.g. HBase. Nonetheless, the main programming paradigm stays the same.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569230828354_687314306",
+      "id": "20190923-092708_1770400034",
+      "dateCreated": "2019-09-23 09:27:08.354",
+      "dateStarted": "2019-09-30 16:47:20.987",
+      "dateFinished": "2019-09-30 16:47:21.015",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 13:03:54.141",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569323562188_387041752",
+      "id": "20190924-111242_232391731",
+      "dateCreated": "2019-09-24 11:12:42.189",
+      "status": "READY",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "Outlier Detection: An ETL Tutorial with Spark - Scala",
+  "id": "2EQQ6BAV6",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {
+    "md:shared_process": [],
+    "python:shared_process": [],
+    "spark:shared_process": []
+  },
+  "config": {
+    "isZeppelinNotebookCronEnable": false
+  },
+  "info": {}
+}

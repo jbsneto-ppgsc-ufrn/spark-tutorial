@@ -1,0 +1,140 @@
+{
+  "paragraphs": [
+    {
+      "text": "%md\n\n# Word Count\n\nIn this example, we use a few transformations to count the number of occurrences of each word in a given input set and print the 10 most frequent words.",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:29:18.135",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionSupport": false,
+          "completionKey": "TAB"
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch1\u003eWord Count\u003c/h1\u003e\n\u003cp\u003eIn this example, we use a few transformations to count the number of occurrences of each word in a given input set and print the 10 most frequent words.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569843542719_723024608",
+      "id": "20190930-113902_2093804512",
+      "dateCreated": "2019-09-30 11:39:02.719",
+      "dateStarted": "2019-09-30 17:29:18.152",
+      "dateFinished": "2019-09-30 17:29:18.165",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%pyspark\n\n# Read each line of the input set into an RDD\ninput \u003d sc.textFile(\"/data/book.txt\")\n\n# Split into words separated by a space character\nwords \u003d input.flatMap(lambda x: x.split(\" \"))\n\n# Transform the words into key-value tuples like (word, 1)\nwordsTuple \u003d words.map(lambda word: (word, 1))\n    \n# Count up the occurrence of each word by summing all values (1) associated with the same key (word)\nwordCounts \u003d wordsTuple.reduceByKey(lambda a, b: a + b)\n\n# Sort the RDD by the value (count) in descending order\nwordCountsSorted \u003d wordCounts.sortBy(lambda wordCount: wordCount[1], ascending \u003d False)\n\n# Take the 10 most frequent words\nmost10FrequentWords \u003d wordCountsSorted.take(10)\n\nfor n in range(0, 9):\n    print most10FrequentWords[n]\n",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:41:51.855",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/python",
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "(u\u0027to\u0027, 1789)\n(u\u0027your\u0027, 1339)\n(u\u0027you\u0027, 1267)\n(u\u0027the\u0027, 1176)\n(u\u0027a\u0027, 1148)\n(u\u0027of\u0027, 941)\n(u\u0027and\u0027, 901)\n(u\u0027that\u0027, 641)\n(u\u0027in\u0027, 552)\n"
+          }
+        ]
+      },
+      "runtimeInfos": {
+        "jobUrl": {
+          "propertyName": "jobUrl",
+          "label": "SPARK JOB",
+          "tooltip": "View in Spark web UI",
+          "group": "spark",
+          "values": [
+            "http://172.17.0.2:4040/jobs/job?id\u003d38"
+          ],
+          "interpreterSettingId": "spark"
+        }
+      },
+      "apps": [],
+      "jobName": "paragraph_1569843558433_-1329759152",
+      "id": "20190930-113918_805648370",
+      "dateCreated": "2019-09-30 11:39:18.434",
+      "dateStarted": "2019-09-30 17:41:51.876",
+      "dateFinished": "2019-09-30 17:41:52.318",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%pyspark\n",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:29:18.669",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "python",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/python"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569844454555_1076758010",
+      "id": "20190930-115414_1183095175",
+      "dateCreated": "2019-09-30 11:54:14.555",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "Word Count - Python",
+  "id": "2ER9EUWBB",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {
+    "md:shared_process": [],
+    "python:shared_process": [],
+    "spark:shared_process": []
+  },
+  "config": {
+    "isZeppelinNotebookCronEnable": false,
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {}
+}

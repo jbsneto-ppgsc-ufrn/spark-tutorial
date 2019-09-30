@@ -1,0 +1,123 @@
+{
+  "paragraphs": [
+    {
+      "text": "%md\n\n# Word Count\n\nIn this example, we use a few transformations to count the number of occurrences of each word in a given input set and print the 10 most frequent words.",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 11:52:52.923",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true,
+          "completionKey": "TAB",
+          "completionSupport": false
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch1\u003eWord Count\u003c/h1\u003e\n\u003cp\u003eIn this example, we use a few transformations to count the number of occurrences of each word in a given input set and print the 10 most frequent words.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1569842006857_-1514490877",
+      "id": "20190930-111326_1528426010",
+      "dateCreated": "2019-09-30 11:13:26.857",
+      "dateStarted": "2019-09-30 11:52:52.923",
+      "dateFinished": "2019-09-30 11:52:52.958",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Read each line of the input set into an RDD\nval input \u003d sc.textFile(\"/data/book.txt\")\n\n// Split into words separated by a space character\nval words \u003d input.flatMap(x \u003d\u003e x.split(\" \"))\n\n// Transform the words into key-value tuples like (word, 1)\nval wordsTuple \u003d words.map(word \u003d\u003e (word, 1))\n    \n// Count up the occurrence of each word by summing all values (1) associated with the same key (word)\nval wordCounts \u003d wordsTuple.reduceByKey(_ + _)\n\n// Sort the RDD by the value (count) in descending order\nval wordCountsSorted \u003d wordCounts.sortBy(wordCount \u003d\u003e wordCount._2, ascending \u003d false)\n\n// Take the 10 most frequent words\nval most10FrequentWords \u003d wordCountsSorted.take(10)\n\nmost10FrequentWords.foreach(println)",
+      "user": "anonymous",
+      "dateUpdated": "2019-09-30 17:42:26.219",
+      "config": {
+        "colWidth": 12.0,
+        "fontSize": 9.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false,
+          "completionKey": "TAB",
+          "completionSupport": true
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "(to,1789)\n(your,1339)\n(you,1267)\n(the,1176)\n(a,1148)\n(of,941)\n(and,901)\n(that,641)\n(in,552)\n(is,531)\ninput: org.apache.spark.rdd.RDD[String] \u003d /data/book.txt MapPartitionsRDD[231] at textFile at \u003cconsole\u003e:50\nwords: org.apache.spark.rdd.RDD[String] \u003d MapPartitionsRDD[232] at flatMap at \u003cconsole\u003e:53\nwordsTuple: org.apache.spark.rdd.RDD[(String, Int)] \u003d MapPartitionsRDD[233] at map at \u003cconsole\u003e:56\nwordCounts: org.apache.spark.rdd.RDD[(String, Int)] \u003d ShuffledRDD[234] at reduceByKey at \u003cconsole\u003e:59\nwordCountsSorted: org.apache.spark.rdd.RDD[(String, Int)] \u003d MapPartitionsRDD[237] at sortBy at \u003cconsole\u003e:62\nmost10FrequentWords: Array[(String, Int)] \u003d Array((to,1789), (your,1339), (you,1267), (the,1176), (a,1148), (of,941), (and,901), (that,641), (in,552), (is,531))\n"
+          }
+        ]
+      },
+      "runtimeInfos": {
+        "jobUrl": {
+          "propertyName": "jobUrl",
+          "label": "SPARK JOB",
+          "tooltip": "View in Spark web UI",
+          "group": "spark",
+          "values": [
+            "http://172.17.0.2:4040/jobs/job?id\u003d39"
+          ],
+          "interpreterSettingId": "spark"
+        }
+      },
+      "apps": [],
+      "jobName": "paragraph_1569842179046_-1732404042",
+      "id": "20190930-111619_1442591149",
+      "dateCreated": "2019-09-30 11:16:19.046",
+      "dateStarted": "2019-09-30 17:42:26.248",
+      "dateFinished": "2019-09-30 17:42:27.126",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "user": "anonymous",
+      "config": {},
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1569842253426_1944607912",
+      "id": "20190930-111733_316549623",
+      "dateCreated": "2019-09-30 11:17:33.427",
+      "status": "READY",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "Word Count - Scala",
+  "id": "2ERGJNXED",
+  "noteParams": {},
+  "noteForms": {},
+  "angularObjects": {
+    "md:shared_process": [],
+    "python:shared_process": [],
+    "spark:shared_process": []
+  },
+  "config": {
+    "isZeppelinNotebookCronEnable": false
+  },
+  "info": {}
+}
